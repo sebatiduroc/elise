@@ -508,10 +508,6 @@ function updateSpeed(){
   const pct=getSpeedPct();
   document.getElementById('speed-bar').style.width=pct+'%';
   document.getElementById('speed-pct').textContent=pct+'%';
-  const palier=Math.floor((level-1)/5)+1;
-  const badge=document.getElementById('combo-badge');
-  badge.textContent='PALIER '+palier+' | NIVEAU '+level;
-  badge.className='combo-badge'+(mode==='insane'?' insane':palier>1?' active':'');
 }
 
 async function learnPhase(){
