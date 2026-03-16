@@ -187,7 +187,7 @@
     <div class="wr-title">RECORD MONDIAL</div>
     <div class="wr-body">
       <div class="wr-score" id="wr-score">—</div>
-      <div class="wr-pseudo" id="wr-pseudo">chargement...</div>
+      <div class="wr-pseudo" id="wr-pseudo">—</div>
       <div class="wr-date" id="wr-date"></div>
     </div>
   </div>
@@ -313,15 +313,15 @@ function homeSetDiff(d){
   document.querySelectorAll('.home-diff-btn').forEach(b=>b.classList.toggle('active',+b.dataset.diff===d));
 }
 function goToGame(){
+  playing=false;playerTurn=false;clearThinkTimer();
   document.getElementById('screen-home').style.display='none';
   document.getElementById('screen-game').style.display='block';
   buildBoard();updateSpeed();
   setStatus('PRÊT !','');
   document.getElementById('score').textContent=0;
+  document.getElementById('main-btn').disabled=false;
   refreshBestDisplay();
   updateWorldRecord();
-  document.getElementById('main-btn').disabled=false;
-  // Rafraîchit les records en arrière-plan sans bloquer
   fetchRecords().then(()=>updateWorldRecord());
 }
 function goToHome(){
