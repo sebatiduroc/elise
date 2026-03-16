@@ -511,16 +511,27 @@ function makeInsaneMap(colors){
 }
 
 async function playSequence(){
-  const ms=getSpeed(),pause=Math.max(100,ms*0.4);
+  const ms=getSpeed(),pause=Math.max(80,ms*0.35);
+  const litDur=Math.max(120,ms*0.7);  // durée visible garantie
   const colors=COLORS.slice(0,diff);
   if(mode==='insane') insaneDisplayMap=makeInsaneMap(colors);
   for(let i=0;i<sequence.length;i++){
     await delay(pause);const sc=sequence[i];
-    if(mode==='rookie'){litArc(sc,true);playTone(sc,ms*0.75);await delay(ms*0.75);litArc(sc,false);}
-    else if(mode==='gm'){playTone(sc,ms*0.75);await delay(ms*0.75);}
-    else{const fc=insaneDisplayMap[sc];litArc(fc,true);playTone(sc,ms*0.75);await delay(ms*0.75);litArc(fc,false);}
+    if(mode==='rookie'){
+      litArc(sc,true);playTone(sc,litDur);
+      await delay(litDur);
+      litArc(sc,false);
+    } else if(mode==='gm'){
+      playTone(sc,litDur);
+      await delay(litDur);
+    } else {
+      const fc=insaneDisplayMap[sc];
+      litArc(fc,true);playTone(sc,litDur);
+      await delay(litDur);
+      litArc(fc,false);
+    }
   }
-  await delay(300);playerTurn=true;step=0;
+  await delay(250);playerTurn=true;step=0;
   if(mode==='gm') setStatus('QUEL SON C\'ÉTAIT ?','warn');
   else if(mode==='insane') setStatus('IGNORE LES COULEURS !','insane');
   else setStatus('À TON TOUR...','success');
