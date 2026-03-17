@@ -391,7 +391,7 @@ async function saveRecord(key,s){
 }
 
 /* ══ DÉCO SVG ══ */
-function buildSVGDeco(svgEl){
+function buildSVGDeco(svgEl, clickable=false){
   svgEl.innerHTML='';
   const colors=COLORS.slice(0,4),cx=150,cy=150,r1=55,r2=138,gap=4;
   const aStep=(2*Math.PI)/4;
@@ -403,8 +403,32 @@ function buildSVGDeco(svgEl){
     svgEl.appendChild(p);
   });
   const ci=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  ci.setAttribute('cx',150);ci.setAttribute('cy',150);ci.setAttribute('r',52);ci.setAttribute('fill','#0a0a12');
+  ci.setAttribute('cx',150);ci.setAttribute('cy',150);ci.setAttribute('r',52);
+  ci.setAttribute('fill','#0a0a12');
+  if(clickable){
+    ci.setAttribute('cursor','pointer');
+    ci.addEventListener('click', showRecords);
+    ci.addEventListener('touchend', (e)=>{e.preventDefault();showRecords();},{passive:false});
+  }
   svgEl.appendChild(ci);
+  // Trophée cliquable au centre (accueil seulement)
+  if(clickable){
+    const trophy=document.createElementNS('http://www.w3.org/2000/svg','text');
+    trophy.setAttribute('x',150);trophy.setAttribute('y',162);
+    trophy.setAttribute('text-anchor','middle');trophy.setAttribute('font-size','36');
+    trophy.setAttribute('cursor','pointer');
+    trophy.setAttribute('pointer-events','all');
+    trophy.textContent='🏆';
+    trophy.addEventListener('click', showRecords);
+    trophy.addEventListener('touchend', (e)=>{e.preventDefault();showRecords();},{passive:false});
+    svgEl.appendChild(trophy);
+    const hint=document.createElementNS('http://www.w3.org/2000/svg','text');
+    hint.setAttribute('x',150);hint.setAttribute('y',178);
+    hint.setAttribute('text-anchor','middle');hint.setAttribute('font-size','9');
+    hint.setAttribute('font-family','Orbitron');hint.setAttribute('fill','#c8960c');hint.setAttribute('opacity','0.8');
+    hint.setAttribute('pointer-events','none');hint.textContent='RECORDS';
+    svgEl.appendChild(hint);
+  }
 }
 
 /* ══ ÉCRAN PSEUDO ══ */
@@ -429,7 +453,7 @@ function validatePseudo(){
   document.getElementById('screen-pseudo').style.display='none';
   document.getElementById('screen-home').style.display='flex';
   document.getElementById('home-pseudo-badge').textContent='JOUEUR : '+pseudo;
-  buildSVGDeco(document.getElementById('deco-svg'));
+  buildSVGDeco(document.getElementById('deco-svg'), true);
 }
 
 document.getElementById('pseudo-input').addEventListener('input',checkPseudoLive);
@@ -732,50 +756,92 @@ function getSpeedPct(){return Math.round(((700-getSpeed())/(700-180))*100);}
 
 function buildBoard(){
   const svg=document.getElementById('board-svg');svg.innerHTML='';
-  const colors=COLORS.slice(0,diff),cx=150,cy=150,r1=55,r2=138,gap=4;
-  const aStep=(2*Math.PI)/colors.length;
+  const colors=COLORS.slice(0,diff),n=colors.length;
+  const cx=150,cy=150,r1=36,gap=3; // r1 réduit pour laisser juste la place au texte
+  const NS='http://www.w3.org/2000/svg';
+
+  // Rayon du polygone : inscrit dans un cercle de rayon r2
+  // On calcule r2 pour que le polygone tienne dans le viewBox
+  const r2=136;
+  const aStep=(2*Math.PI)/n;
+
+  // Sommets du polygone extérieur (n sommets)
+  const verts=[];
+  for(let i=0;i<n;i++){
+    const a=-Math.PI/2+i*aStep;
+    verts.push([cx+r2*Math.cos(a), cy+r2*Math.sin(a)]);
+  }
+
   colors.forEach((c,i)=>{
-    const sa=-Math.PI/2+i*aStep+gap/r2,ea=-Math.PI/2+(i+1)*aStep-gap/r2;
-    const cos1=Math.cos(sa),sin1=Math.sin(sa),cos2=Math.cos(ea),sin2=Math.sin(ea);
-    const la=(ea-sa>Math.PI)?1:0;
-    const d=`M${cx+r1*cos1},${cy+r1*sin1} L${cx+r2*cos1},${cy+r2*sin1} A${r2},${r2},0,${la},1,${cx+r2*cos2},${cy+r2*sin2} L${cx+r1*cos2},${cy+r1*sin2} A${r1},${r1},0,${la},0,${cx+r1*cos1},${cy+r1*sin1}`;
-    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d',d);path.setAttribute('fill',c.fill);
-    path.setAttribute('stroke','#0a0a12');path.setAttribute('stroke-width','2');
-    path.id='arc-'+c.id;path.style.cursor='pointer';path.style.outline='none';
+    // Les deux sommets extérieurs de cette tranche
+    const [x1,y1]=verts[i];
+    const [x2,y2]=verts[(i+1)%n];
+
+    // Les deux points sur le cercle intérieur correspondants
+    const sa=-Math.PI/2+i*aStep;
+    const ea=-Math.PI/2+(i+1)*aStep;
+
+    // Inset des bords pour créer les espaces entre pavés
+    // On réduit légèrement chaque sommet vers le centre
+    const inset=gap/r2;
+    const sa2=sa+inset, ea2=ea-inset;
+
+    // Barycentre du triangle i→centre→(i+1) pour décaler les sommets extérieurs
+    const midA=(sa+ea)/2;
+    const shrink=gap;
+    // Décalage des sommets extérieurs vers l'intérieur du segment
+    const nx1=x1+(cx+(r2-shrink)*Math.cos(sa)-x1)*0.08;
+    const ny1=y1+(cy+(r2-shrink)*Math.sin(sa)-y1)*0.08;
+    const nx2=x2+(cx+(r2-shrink)*Math.cos(ea)-x2)*0.08;
+    const ny2=y2+(cy+(r2-shrink)*Math.sin(ea)-y2)*0.08;
+
+    // Points intérieurs sur le cercle central (avec petit inset angulaire)
+    const ix1=cx+r1*Math.cos(sa2), iy1=cy+r1*Math.sin(sa2);
+    const ix2=cx+r1*Math.cos(ea2), iy2=cy+r1*Math.sin(ea2);
+    const largeArc=(ea2-sa2>Math.PI)?1:0;
+
+    // Chemin : sommet ext1 → sommet ext2 → arc intérieur retour
+    const d=`M${nx1},${ny1} L${nx2},${ny2} L${ix2},${iy2} A${r1},${r1},0,${largeArc},0,${ix1},${iy1} Z`;
+
+    const path=document.createElementNS(NS,'path');
+    path.setAttribute('d',d);
+    path.setAttribute('fill',c.fill);
+    path.setAttribute('stroke','#0a0a12');
+    path.setAttribute('stroke-width','3');
+    path.setAttribute('stroke-linejoin','round');
+    path.id='arc-'+c.id;
+    path.style.cursor='pointer';path.style.outline='none';
     path.addEventListener('touchstart',(e)=>{e.preventDefault();handlePlayerPress(c.id);},{passive:false});
     path.addEventListener('touchend',(e)=>{e.preventDefault();handlePlayerRelease(c.id);},{passive:false});
     path.addEventListener('touchcancel',(e)=>{e.preventDefault();handlePlayerRelease(c.id);},{passive:false});
     path.addEventListener('mousedown',(e)=>{e.preventDefault();handlePlayerPress(c.id);});
     path.addEventListener('mouseup',(e)=>{e.preventDefault();handlePlayerRelease(c.id);});
     path.addEventListener('mouseleave',()=>{handlePlayerRelease(c.id);});
-    const midA=(sa+ea)/2,tr=(r1+r2)*0.5;
-    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x',cx+tr*Math.cos(midA));t.setAttribute('y',cy+tr*Math.sin(midA)+5);
-    t.setAttribute('text-anchor','middle');t.setAttribute('font-size','13');
-    t.setAttribute('font-family','Orbitron');t.setAttribute('fill','#ffffff33');
-    t.setAttribute('pointer-events','none');t.textContent=c.label;
-    svg.appendChild(path);svg.appendChild(t);
+
+    svg.appendChild(path);
   });
-  const ci=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  ci.setAttribute('cx',150);ci.setAttribute('cy',150);ci.setAttribute('r',52);
+
+  // Rond central
+  const ci=document.createElementNS(NS,'circle');
+  ci.setAttribute('cx',150);ci.setAttribute('cy',150);ci.setAttribute('r',r1);
   ci.setAttribute('fill','#0a0a12');ci.setAttribute('pointer-events','none');svg.appendChild(ci);
-  // É remonté
-  const logo=document.createElementNS('http://www.w3.org/2000/svg','text');
+
+  // É
+  const logo=document.createElementNS(NS,'text');
   logo.setAttribute('x',150);logo.setAttribute('y',148);
-  logo.setAttribute('text-anchor','middle');logo.setAttribute('font-size','22');
+  logo.setAttribute('text-anchor','middle');logo.setAttribute('font-size','16');
   logo.setAttribute('font-family','Orbitron');logo.setAttribute('fill','#3a86ff');
   logo.setAttribute('pointer-events','none');logo.textContent='É';svg.appendChild(logo);
-  // Label du mode en or avec animation breathing
+
+  // Label mode animé
   const modeLabels={rookie:'ROOKIE',gm:'GRAND MAÎTRE',insane:'INSANE'};
-  const modeText=document.createElementNS('http://www.w3.org/2000/svg','text');
-  modeText.setAttribute('x',150);modeText.setAttribute('y',168);
-  modeText.setAttribute('text-anchor','middle');modeText.setAttribute('font-size','9');
+  const modeText=document.createElementNS(NS,'text');
+  modeText.setAttribute('x',150);modeText.setAttribute('y',161);
+  modeText.setAttribute('text-anchor','middle');modeText.setAttribute('font-size','6.5');
   modeText.setAttribute('font-family','Orbitron');modeText.setAttribute('fill','#ffe566');
   modeText.setAttribute('pointer-events','none');modeText.setAttribute('id','svg-mode-label');
   modeText.textContent=modeLabels[mode]||'ROOKIE';
-  // Animation SVG : opacité entre 0.75 et 1 sur 5s
-  const anim=document.createElementNS('http://www.w3.org/2000/svg','animate');
+  const anim=document.createElementNS(NS,'animate');
   anim.setAttribute('attributeName','opacity');
   anim.setAttribute('values','1;0.75;1');
   anim.setAttribute('dur','5s');
@@ -948,7 +1014,17 @@ buildSVGDeco(document.getElementById('deco-pseudo'));
 // Enregistrement du Service Worker (PWA)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.onupdatefound = () => {
+        const sw = reg.installing;
+        sw.onstatechange = function() {
+          if (this.state === 'installed' && navigator.serviceWorker.controller) {
+            // Nouveau SW installé — recharger pour appliquer la mise à jour
+            window.location.reload();
+          }
+        };
+      };
+    }).catch(() => {});
   });
 }
 </script>
