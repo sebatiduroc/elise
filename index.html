@@ -101,6 +101,52 @@
   .fs-btn:hover{border-color:#3a86ff;color:#80b3ff;}
   .back-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 9px;cursor:pointer;font-size:13px;outline:none;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:1px;transition:all .2s;}
   .back-btn:hover{border-color:#ff6b7a;color:#ff6b7a;}
+  .rules-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;outline:none;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:1px;transition:all .2s;}
+  .rules-btn:hover{border-color:#ffe566;color:#ffe566;}
+
+  /* ── Overlay règles ── */
+  #screen-rules{
+    display:none;position:fixed;inset:0;z-index:10000;
+    background:#0a0a12;
+    flex-direction:column;align-items:stretch;
+    padding:28px 24px 24px;gap:0;
+    overflow-y:auto;
+    font-family:'Share Tech Mono','Courier New',monospace;
+  }
+  #screen-rules.visible{display:flex;}
+  .rules-header{
+    font-family:'Orbitron','Rajdhani','Exo 2','Segoe UI',sans-serif;
+    font-size:20px;font-weight:700;color:#fff;letter-spacing:3px;
+    text-align:center;margin-bottom:6px;
+  }
+  .rules-sub{
+    font-size:13px;color:#ffe566;letter-spacing:2px;
+    text-align:center;margin-bottom:24px;
+  }
+  .rules-section{margin-bottom:20px;}
+  .rules-section-title{
+    font-family:'Orbitron','Rajdhani','Exo 2','Segoe UI',sans-serif;
+    font-size:14px;font-weight:700;color:#80b3ff;
+    letter-spacing:2px;margin-bottom:10px;
+    border-bottom:1px solid #1e1e3a;padding-bottom:6px;
+  }
+  .rules-text{
+    font-size:16px;color:#e0e8ff;line-height:1.7;
+    letter-spacing:0.3px;
+  }
+  .rules-text li{margin-bottom:8px;list-style:none;padding-left:16px;position:relative;}
+  .rules-text li::before{content:'›';position:absolute;left:0;color:#ffe566;}
+  .rules-highlight{color:#ffe566;font-weight:bold;}
+  .rules-warn{color:#ff8090;}
+  .rules-ok-btn{
+    font-family:'Orbitron','Rajdhani','Exo 2','Segoe UI',sans-serif;
+    font-size:15px;padding:14px 0;width:100%;
+    border-radius:8px;border:1.5px solid #5fff82;
+    background:#001a0d;color:#5fff82;
+    cursor:pointer;letter-spacing:2px;transition:all .2s;outline:none;
+    margin-top:8px;flex-shrink:0;
+  }
+  .rules-ok-btn:hover{background:#003020;border-color:#88ffaa;}
   .board-wrap{width:min(88vw,360px);aspect-ratio:1;flex-shrink:0;}
   #app.fullscreen .board-wrap{width:min(92vw,400px);}
   .board-wrap svg{width:100%;height:100%;outline:none;}
@@ -190,11 +236,20 @@
   <div class="credit">Créé par Sébastien Dumortier</div>
 </div>
 
+<!-- ══ OVERLAY RÈGLES ══ -->
+<div id="screen-rules">
+  <div class="rules-header" id="rules-title">RÈGLES</div>
+  <div class="rules-sub" id="rules-sub"></div>
+  <div id="rules-body"></div>
+  <button class="rules-ok-btn" onclick="closeRules()">J'AI COMPRIS ✓</button>
+</div>
+
 <!-- ══ ÉCRAN DE JEU ══ -->
 <div id="screen-game">
 <div id="app">
   <div class="top-row">
     <button class="back-btn" onclick="goToHome()">← ACCUEIL</button>
+    <button class="rules-btn" onclick="showRules()">? RÈGLES</button>
     <button class="fs-btn" id="fs-btn" onclick="toggleFullscreen()">⛶</button>
   </div>
   <div class="board-wrap">
@@ -356,6 +411,117 @@ function goToHome(){
     document.getElementById('fs-btn').textContent='⛶';
     try{document.exitFullscreen&&document.exitFullscreen().catch(()=>{});}catch(e){}
   }
+}
+
+/* ══ RÈGLES ══ */
+const RULES_CONTENT={
+  rookie:{
+    title:'MODE ROOKIE',
+    sections:[
+      {
+        title:'OBJECTIF',
+        items:[
+          'Mémorise la séquence de couleurs qui s\'allume.',
+          'Reproduis-la dans le même ordre en appuyant sur les touches.',
+          'La séquence s\'allonge d\'une couleur à chaque round réussi.'
+        ]
+      },
+      {
+        title:'COMMENT JOUER',
+        items:[
+          '<span class="rules-highlight">Regarde</span> attentivement les couleurs qui s\'illuminent.',
+          'Appuie sur chaque couleur dans le bon ordre.',
+          '<span class="rules-highlight">Maintiens</span> ta pression pour entendre le son — relâche pour valider.',
+          'Tu as <span class="rules-highlight">4 secondes</span> pour appuyer à chaque étape.'
+        ]
+      },
+      {
+        title:'VITESSE',
+        items:[
+          'La séquence s\'accélère progressivement.',
+          'Tous les 5 niveaux, un <span class="rules-highlight">palier de vitesse</span> supplémentaire est franchi.'
+        ]
+      }
+    ]
+  },
+  gm:{
+    title:'MODE GRAND MAÎTRE',
+    sections:[
+      {
+        title:'PHASE D\'APPRENTISSAGE',
+        items:[
+          'Au début, chaque couleur s\'allume avec son son associé — <span class="rules-highlight">deux fois de suite</span>.',
+          'Mémorise quel son correspond à quelle couleur.'
+        ]
+      },
+      {
+        title:'PHASE DE JEU',
+        items:[
+          '<span class="rules-warn">Aucune couleur ne s\'allume</span> pendant la séquence — tu n\'entends que les sons.',
+          'Retrouve les bonnes couleurs <span class="rules-highlight">à l\'oreille uniquement</span>.',
+          'Tu as <span class="rules-highlight">4 secondes</span> pour appuyer à chaque étape.'
+        ]
+      },
+      {
+        title:'CONSEIL',
+        items:[
+          'Associe mentalement une image ou un mot à chaque son pendant la phase d\'apprentissage.'
+        ]
+      }
+    ]
+  },
+  insane:{
+    title:'MODE INSANE',
+    sections:[
+      {
+        title:'PHASE D\'APPRENTISSAGE',
+        items:[
+          'Au début, chaque couleur s\'allume avec son son associé — <span class="rules-highlight">deux fois de suite</span>.',
+          'Mémorise quel son correspond à quelle couleur.'
+        ]
+      },
+      {
+        title:'PHASE DE JEU',
+        items:[
+          'Le bon son est joué, mais <span class="rules-warn">une fausse couleur s\'allume</span> délibérément.',
+          '<span class="rules-warn">Ignore ce que tu vois.</span> Réponds uniquement au son entendu.',
+          'Tu as <span class="rules-highlight">4 secondes</span> pour appuyer à chaque étape.'
+        ]
+      },
+      {
+        title:'AVERTISSEMENT',
+        items:[
+          'Ce mode teste ta capacité à <span class="rules-warn">résister à l\'interférence visuelle</span>.',
+          'Concentre-toi exclusivement sur les sons.'
+        ]
+      }
+    ]
+  }
+};
+
+const DIFF_NOTE={
+  4:'4 couleurs — accord de Do majeur (Do · Mi · Sol · Do)',
+  5:'5 couleurs — accord de Ré7 (Ré · Fa# · La · Do · Mi)',
+  6:'6 couleurs — gamme de Do (Do · Ré · Mi · Fa · Sol · La)'
+};
+
+function showRules(){
+  const rules=RULES_CONTENT[mode]||RULES_CONTENT.rookie;
+  document.getElementById('rules-title').textContent=rules.title;
+  document.getElementById('rules-sub').textContent=DIFF_NOTE[diff]||'';
+  let html='';
+  rules.sections.forEach(s=>{
+    html+=`<div class="rules-section">`;
+    html+=`<div class="rules-section-title">${s.title}</div>`;
+    html+=`<ul class="rules-text">`;
+    s.items.forEach(item=>{html+=`<li>${item}</li>`;});
+    html+=`</ul></div>`;
+  });
+  document.getElementById('rules-body').innerHTML=html;
+  document.getElementById('screen-rules').classList.add('visible');
+}
+function closeRules(){
+  document.getElementById('screen-rules').classList.remove('visible');
 }
 
 /* ══ RECORD MONDIAL ══ */
