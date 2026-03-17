@@ -96,13 +96,61 @@
     color:#e0e0f0;gap:4px;user-select:none;-webkit-user-select:none;
   }
   #app.fullscreen{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;overflow:hidden;justify-content:space-evenly;}
-  .top-row{display:flex;width:100%;align-items:center;justify-content:space-between;}
-  .fs-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:14px;outline:none;}
+  .top-row{display:flex;width:100%;align-items:center;justify-content:space-between;gap:4px;}
+  .fs-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 7px;cursor:pointer;font-size:14px;outline:none;flex-shrink:0;}
   .fs-btn:hover{border-color:#3a86ff;color:#80b3ff;}
-  .back-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 9px;cursor:pointer;font-size:13px;outline:none;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:1px;transition:all .2s;}
+  .back-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;outline:none;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:1px;transition:all .2s;flex-shrink:0;}
   .back-btn:hover{border-color:#ff6b7a;color:#ff6b7a;}
-  .rules-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;outline:none;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:1px;transition:all .2s;}
+  .rules-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;outline:none;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:1px;transition:all .2s;flex-shrink:0;}
   .rules-btn:hover{border-color:#ffe566;color:#ffe566;}
+  .records-btn{background:transparent;border:1px solid #4a4a80;color:#a0a8c8;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;outline:none;font-family:'Share Tech Mono','Courier New',monospace;letter-spacing:1px;transition:all .2s;flex-shrink:0;}
+  .records-btn:hover{border-color:#ffd60a;color:#ffd60a;}
+
+  /* ── Overlay records ── */
+  #screen-records{
+    display:none;position:fixed;inset:0;z-index:10000;
+    background:#0a0a12;
+    flex-direction:column;align-items:stretch;
+    padding:28px 20px 24px;gap:12px;
+    overflow-y:auto;
+    font-family:'Share Tech Mono','Courier New',monospace;
+  }
+  #screen-records.visible{display:flex;}
+  .rec-header{
+    font-family:'Orbitron','Rajdhani','Exo 2','Segoe UI',sans-serif;
+    font-size:20px;font-weight:700;color:#fff;letter-spacing:3px;
+    text-align:center;margin-bottom:4px;
+  }
+  .rec-table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+  .rec-table thead tr{border-bottom:1px solid #2a2a50;}
+  .rec-table th{
+    font-family:'Orbitron','Rajdhani','Exo 2','Segoe UI',sans-serif;
+    font-size:11px;color:#a0a8c8;letter-spacing:2px;
+    padding:6px 8px;text-align:left;font-weight:400;
+  }
+  .rec-table th:last-child{text-align:right;}
+  .rec-table td{
+    font-size:17px;padding:10px 8px;
+    border-bottom:1px solid #14142a;vertical-align:middle;
+  }
+  .rec-td-mode{color:#e0e8ff;letter-spacing:1px;}
+  .rec-td-diff{color:#a0a8c8;font-size:14px;}
+  .rec-td-pseudo{color:#80b3ff;letter-spacing:1px;}
+  .rec-td-score{
+    font-family:'Orbitron','Rajdhani','Exo 2','Segoe UI',sans-serif;
+    font-size:22px;font-weight:700;color:#ffd60a;
+    text-align:right;
+  }
+  .rec-empty{font-size:15px;color:#a0a8c8;text-align:center;padding:24px 0;}
+  .rec-ok-btn{
+    font-family:'Orbitron','Rajdhani','Exo 2','Segoe UI',sans-serif;
+    font-size:15px;padding:14px 0;width:100%;
+    border-radius:8px;border:1.5px solid #5fff82;
+    background:#001a0d;color:#5fff82;
+    cursor:pointer;letter-spacing:2px;transition:all .2s;outline:none;
+    margin-top:4px;flex-shrink:0;
+  }
+  .rec-ok-btn:hover{background:#003020;}
 
   /* ── Overlay règles ── */
   #screen-rules{
@@ -236,6 +284,13 @@
   <div class="credit">Créé par Sébastien Dumortier</div>
 </div>
 
+<!-- ══ OVERLAY RECORDS ══ -->
+<div id="screen-records">
+  <div class="rec-header">🏆</div>
+  <div id="records-body"></div>
+  <button class="rec-ok-btn" onclick="closeRecords()">FERMER ✕</button>
+</div>
+
 <!-- ══ OVERLAY RÈGLES ══ -->
 <div id="screen-rules">
   <div class="rules-header" id="rules-title">RÈGLES</div>
@@ -250,6 +305,7 @@
   <div class="top-row">
     <button class="back-btn" onclick="goToHome()">← ACCUEIL</button>
     <button class="rules-btn" onclick="showRules()">? RÈGLES</button>
+    <button class="records-btn" onclick="showRecords()">🏆</button>
     <button class="fs-btn" id="fs-btn" onclick="toggleFullscreen()">⛶</button>
   </div>
   <div class="board-wrap">
@@ -522,6 +578,43 @@ function showRules(){
 }
 function closeRules(){
   document.getElementById('screen-rules').classList.remove('visible');
+}
+
+/* ══ RECORDS ══ */
+const MODE_LABELS={rookie:'Rookie',gm:'Grand Maître',insane:'Insane'};
+const DIFF_LABELS={4:'4 couleurs',5:'5 couleurs',6:'6 couleurs'};
+
+function showRecords(){
+  const rows=[
+    ['rookie',4],['rookie',5],['rookie',6],
+    ['gm',4],['gm',5],['gm',6],
+    ['insane',4],['insane',5],['insane',6],
+  ];
+  const hasAny=rows.some(([m,d])=>globalRecords[m+'_'+d]&&globalRecords[m+'_'+d].score>0);
+  let html='';
+  if(!hasAny){
+    html='<div class="rec-empty">Aucun record enregistré.<br>Sois le premier !</div>';
+  } else {
+    html+='<table class="rec-table"><thead><tr>';
+    html+='<th>MODE</th><th>COULEURS</th><th>PSEUDO</th><th>SCORE</th>';
+    html+='</tr></thead><tbody>';
+    rows.forEach(([m,d])=>{
+      const rec=globalRecords[m+'_'+d];
+      if(!rec||!rec.score) return;
+      html+=`<tr>`;
+      html+=`<td class="rec-td-mode">${MODE_LABELS[m]}</td>`;
+      html+=`<td class="rec-td-diff">${DIFF_LABELS[d]}</td>`;
+      html+=`<td class="rec-td-pseudo">${rec.pseudo||'—'}</td>`;
+      html+=`<td class="rec-td-score">${rec.score}</td>`;
+      html+=`</tr>`;
+    });
+    html+='</tbody></table>';
+  }
+  document.getElementById('records-body').innerHTML=html;
+  document.getElementById('screen-records').classList.add('visible');
+}
+function closeRecords(){
+  document.getElementById('screen-records').classList.remove('visible');
 }
 
 /* ══ RECORD MONDIAL ══ */
