@@ -385,6 +385,8 @@ async function fetchRecords(){
   }catch(e){globalRecords=globalRecords||{};}
 }
 async function saveRecord(key,s){
+  // Recharger les records depuis le bin avant d'écrire, pour ne jamais écraser avec des données périmées
+  await fetchRecords();
   const now=new Date();
   const d=now.toLocaleDateString('fr-FR')+' '+now.toLocaleTimeString('fr-FR');
   globalRecords[key]={score:s,pseudo,date:d};
@@ -1019,17 +1021,7 @@ buildSVGDeco(document.getElementById('deco-pseudo'));
 // Enregistrement du Service Worker (PWA)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-      reg.onupdatefound = () => {
-        const sw = reg.installing;
-        sw.onstatechange = function() {
-          if (this.state === 'installed' && navigator.serviceWorker.controller) {
-            // Nouveau SW installé — recharger pour appliquer la mise à jour
-            window.location.reload();
-          }
-        };
-      };
-    }).catch(() => {});
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
 </script>
