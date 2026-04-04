@@ -496,7 +496,11 @@ function goToGame(){
   document.getElementById('main-btn').disabled=false;
   refreshBestDisplay();
   updateWorldRecord();
-  recordsReady=fetchRecords().then(()=>updateWorldRecord());
+  if(!recordsLoaded){
+    recordsReady=fetchRecords().then(()=>updateWorldRecord());
+  } else {
+    updateWorldRecord();
+  }
 }
 function goToHome(){
   playing=false;playerTurn=false;
