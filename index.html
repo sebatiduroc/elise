@@ -385,8 +385,8 @@ async function fetchRecords(){
   }catch(e){globalRecords=globalRecords||{};}
 }
 async function saveRecord(key,s){
-  // Recharger les records depuis le bin avant d'écrire, pour ne jamais écraser avec des données périmées
-  await fetchRecords();
+  // Attendre que le chargement initial soit terminé (évite d'écraser avec globalRecords vide)
+  await recordsReady;
   const now=new Date();
   const d=now.toLocaleDateString('fr-FR')+' '+now.toLocaleTimeString('fr-FR');
   globalRecords[key]={score:s,pseudo,date:d};
@@ -441,8 +441,8 @@ function buildSVGDeco(svgEl, clickable=false){
 
 /* ══ ÉCRAN PSEUDO ══ */
 
-// Charge les records dès le départ pour que la vérification live soit instantanée
-fetchRecords();
+// Charge les records dès le départ — on conserve la promesse pour attendre la fin avant tout PUT
+let recordsReady=fetchRecords();
 
 function checkPseudoLive(){
   const val=document.getElementById('pseudo-input').value.trim().toUpperCase();
@@ -486,7 +486,7 @@ function goToGame(){
   document.getElementById('main-btn').disabled=false;
   refreshBestDisplay();
   updateWorldRecord();
-  fetchRecords().then(()=>updateWorldRecord());
+  recordsReady=fetchRecords().then(()=>updateWorldRecord());
 }
 function goToHome(){
   playing=false;playerTurn=false;
