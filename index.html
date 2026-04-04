@@ -396,13 +396,19 @@ async function fetchRecords(){
 }
 async function saveRecord(key,s){
   await recordsReady;
-  if(!recordsLoaded) return; // ne jamais écrire si le fetch a échoué
+  if(!recordsLoaded) return;
+  // Relire JSONbin juste avant d'écrire pour éviter d'écraser un meilleur record
+  await fetchRecords();
+  if(!recordsLoaded) return;
+  // Vérifier que le score est toujours un record après relecture
+  const current=globalRecords[key];
+  if(current&&current.score>=s) return;
   const now=new Date();
   const d=now.toLocaleDateString('fr-FR')+' '+now.toLocaleTimeString('fr-FR');
   globalRecords[key]={score:s,pseudo,date:d};
   try{
     const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),4000);
+    const tid=setTimeout(()=>ctrl.abort(),15000);
     await fetch(BIN_URL,{method:'PUT',headers:BIN_HEADERS,body:JSON.stringify(globalRecords),signal:ctrl.signal});
     clearTimeout(tid);
   }catch(e){}
