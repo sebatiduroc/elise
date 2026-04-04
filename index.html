@@ -377,7 +377,7 @@ function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 async function fetchRecords(){
   try{
     const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),3000);
+    const tid=setTimeout(()=>ctrl.abort(),6000);
     const r=await fetch(BIN_URL,{headers:{'X-Master-Key':BIN_KEY},signal:ctrl.signal});
     clearTimeout(tid);
     const j=await r.json();
@@ -392,7 +392,7 @@ async function saveRecord(key,s){
   globalRecords[key]={score:s,pseudo,date:d};
   try{
     const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),4000);
+    const tid=setTimeout(()=>ctrl.abort(),6000);
     await fetch(BIN_URL,{method:'PUT',headers:BIN_HEADERS,body:JSON.stringify(globalRecords),signal:ctrl.signal});
     clearTimeout(tid);
   }catch(e){}
