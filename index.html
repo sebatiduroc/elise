@@ -375,14 +375,20 @@ function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
 /* ══ JSONBIN ══ */
 async function fetchRecords(){
-  try{
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),6000);
-    const r=await fetch(BIN_URL,{headers:{'X-Master-Key':BIN_KEY},signal:ctrl.signal});
-    clearTimeout(tid);
-    const j=await r.json();
-    globalRecords=j.record||{};
-  }catch(e){globalRecords=globalRecords||{};}
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),6000);
+      const r=await fetch(BIN_URL,{headers:{'X-Master-Key':BIN_KEY},signal:ctrl.signal});
+      clearTimeout(tid);
+      const j=await r.json();
+      globalRecords=j.record||{};
+      return;
+    }catch(e){
+      if(attempt<2) await delay(1000);
+    }
+  }
+  globalRecords=globalRecords||{};
 }
 async function saveRecord(key,s){
   // Attendre que le chargement initial soit terminé (évite d'écraser avec globalRecords vide)
