@@ -367,6 +367,7 @@ let playing=false,playerTurn=false,level=1,isFull=false;
 let learnDone=false,insaneDisplayMap={};
 const bestScores={};
 let globalRecords={};
+let recordsLoaded=false;
 
 function bestKey(){return mode+'_'+diff;}
 function getBest(){return bestScores[bestKey()]||0;}
@@ -375,30 +376,33 @@ function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
 /* ══ JSONBIN ══ */
 async function fetchRecords(){
-  for(let attempt=0;attempt<3;attempt++){
+  recordsLoaded=false;
+  for(let attempt=0;attempt<5;attempt++){
     try{
       const ctrl=new AbortController();
-      const tid=setTimeout(()=>ctrl.abort(),6000);
+      const tid=setTimeout(()=>ctrl.abort(),15000);
       const r=await fetch(BIN_URL,{headers:{'X-Master-Key':BIN_KEY},signal:ctrl.signal});
       clearTimeout(tid);
       const j=await r.json();
       globalRecords=j.record||{};
+      recordsLoaded=true;
       return;
     }catch(e){
-      if(attempt<2) await delay(1000);
+      if(attempt<4) await delay(3000);
     }
   }
   globalRecords=globalRecords||{};
+  recordsLoaded=false;
 }
 async function saveRecord(key,s){
-  // Attendre que le chargement initial soit terminé (évite d'écraser avec globalRecords vide)
   await recordsReady;
+  if(!recordsLoaded) return; // ne jamais écrire si le fetch a échoué
   const now=new Date();
   const d=now.toLocaleDateString('fr-FR')+' '+now.toLocaleTimeString('fr-FR');
   globalRecords[key]={score:s,pseudo,date:d};
   try{
     const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),6000);
+    const tid=setTimeout(()=>ctrl.abort(),4000);
     await fetch(BIN_URL,{method:'PUT',headers:BIN_HEADERS,body:JSON.stringify(globalRecords),signal:ctrl.signal});
     clearTimeout(tid);
   }catch(e){}
@@ -625,8 +629,11 @@ const DIFF_LABELS={4:'4 couleurs',5:'5 couleurs',6:'6 couleurs'};
 function showRecords(){
   const modes=['rookie','gm','insane'];
   const diffs=[4,5,6];
-  const hasAny=modes.some(m=>diffs.some(d=>globalRecords[m+'_'+d]&&globalRecords[m+'_'+d].score>0));
   let html='';
+  if(!recordsLoaded){
+    html=`<div class="rec-empty" style="color:#ff6b7a;">La liste des records n'a pas pu être jointe.<br>Votre score ne sera pas pris en compte.</div>`;
+  } else {
+  const hasAny=modes.some(m=>diffs.some(d=>globalRecords[m+'_'+d]&&globalRecords[m+'_'+d].score>0));
   if(!hasAny){
     html='<div class="rec-empty">Aucun record enregistré.<br>Sois le premier !</div>';
   } else {
@@ -646,6 +653,7 @@ function showRecords(){
       });
       html+=`</tbody></table>`;
     });
+  }
   }
   document.getElementById('records-body').innerHTML=html;
   document.getElementById('screen-records').classList.add('visible');
